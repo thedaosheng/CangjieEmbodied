@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0}
+body{font-family:'DM Sans',system-ui,sans-serif;color:#1a1a17;background:#f5f4ef;padding:20px;line-height:1.6}
+h1{font-size:22px;font-weight:700;margin-bottom:4px}
+.sub{font-size:13px;color:#666;margin-bottom:20px}
+h2{font-size:16px;font-weight:600;margin:20px 0 8px;color:#2B579A}
+
+.ctrl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}
+.ctrl-item{display:flex;flex-direction:column;gap:4px}
+.ctrl-item label{font-size:12px;color:#666;font-weight:500}
+.ctrl-item select{font-size:13px;padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;font-family:inherit}
+
+.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:16px 0}
+.r-card{background:#fff;border:1px solid #e0dfd6;border-radius:10px;padding:14px}
+.r-card .rl{font-size:11px;color:#888;margin-bottom:2px}
+.r-card .rv{font-size:22px;font-weight:700}
+.r-card .rs{font-size:11px;color:#666;margin-top:2px}
+.highlight{color:#2B579A}
+.green{color:#3b6d11}
+.orange{color:#854f0b}
+.red{color:#a32d2d}
+
+.scenarios{margin:16px 0}
+.scene{border:1px solid #e0dfd6;border-radius:10px;background:#fff;padding:16px;margin:10px 0}
+.scene h3{font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.scene h3 .dot{width:10px;height:10px;border-radius:3px}
+.scene .row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px solid #f4f3ee}
+.scene .row:last-child{border:none}
+.scene .row .l{color:#666}.scene .row .v{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:12px}
+
+.formula{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#555;background:#f0efe8;padding:12px 16px;border-radius:8px;margin:10px 0;line-height:1.8}
+
+.trend{margin:16px 0}
+.trend-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0efe8}
+.trend-row:last-child{border:none}
+.trend-row .yr{font-size:13px;font-weight:600;min-width:50px}
+.trend-row .bar-bg{flex:1;height:20px;background:#f0efe8;border-radius:4px;overflow:hidden;position:relative}
+.trend-row .bar-fill{height:100%;border-radius:4px;transition:width .3s}
+.trend-row .price{font-size:12px;font-weight:600;min-width:80px;text-align:right}
+
+.note{font-size:13px;color:#444;line-height:1.7;margin:10px 0}
+.insight{background:#f6f9fd;border:1px solid #b5d4f4;border-radius:8px;padding:14px 16px;margin:12px 0}
+.insight .it{font-size:13px;font-weight:600;color:#0C447C;margin-bottom:4px}
+.insight .ib{font-size:13px;color:#0C447C;line-height:1.7}
+</style></head><body>
+
+<h1>遥操系统流量费用计算器</h1>
+<div class="sub">480p 双目 + 触觉通道 · 8小时工作日 · 国内/跨国场景对比</div>
+
+<div class="ctrl">
+  <div class="ctrl-item">
+    <label>分辨率</label>
+    <select id="res" onchange="calc()">
+      <option value="640,480" selected>640×480 (VGA/480p)</option>
+      <option value="1280,720">1280×720 (720p)</option>
+      <option value="1920,1080">1920×1080 (1080p)</option>
+    </select>
+  </div>
+  <div class="ctrl-item">
+    <label>帧率</label>
+    <select id="fps" onchange="calc()">
+      <option value="30" selected>30 fps</option>
+      <option value="60">60 fps</option>
+    </select>
+  </div>
+  <div class="ctrl-item">
+    <label>每日工时</label>
+    <select id="hours" onchange="calc()">
+      <option value="4">4 小时</option>
+      <option value="8" selected>8 小时</option>
+      <option value="10">10 小时</option>
+      <option value="12">12 小时</option>
+    </select>
+  </div>
+  <div class="ctrl-item">
+    <label>每月工作天数</label>
+    <select id="days" onchange="calc()">
+      <option value="22" selected>22 天</option>
+      <option value="26">26 天</option>
+      <option value="30">30 天（全月）</option>
+    </select>
+  </div>
+</div>
+
+<div id="dataCards" class="results"></div>
+
+<div id="formulaBox" class="formula"></div>
+
+<h2>三种场景的费用对比</h2>
+<div id="scenarioBox" class="scenarios"></div>
+
+<h2>跨国场景详细对比（中→日 为例）</h2>
+<div id="intlBox" class="scenarios"></div>
+
+<h2>流量成本趋势（每 GB 公网流量价格变化）</h2>
+<div id="trendBox" class="trend"></div>
+
+<div class="insight">
+  <div class="it">为什么流量会越来越便宜？</div>
+  <div class="ib">
+    三大驱动力：<br>
+    <strong>1. 基础设施摊薄</strong>：5G 基站和光纤骨干网的建设成本是一次性的，建成后每多传 1 字节的边际成本趋近于零。中国已建成全球最大的 5G 网络（400万+ 基站），前期投资正在快速摊薄。<br><br>
+    <strong>2. 竞争加剧</strong>：云厂商（阿里云、腾讯云、华为云、京东云）之间的价格战非常激烈。2023-2025 年轻量服务器价格从 200+ 元/年降到 38-68 元/年，降幅超过 60%。带宽成本也在跟着降。<br><br>
+    <strong>3. 技术进步</strong>：H.265/H.266 编码效率持续提升（同画质下码率再降 30-50%），意味着同样的视觉质量需要更少的带宽。未来你可能只需要现在一半的流量就能传同样的画面。<br><br>
+    <strong>预测</strong>：到 2028 年，国内公网流量单价预计再降 40-60%，你的遥操系统单日流量成本可能降到 1 元以下。跨国带宽降幅更大，因为海底光缆容量在快速扩展。
+  </div>
+</div>
+
+<script>
+function calc(){
+  const [w,h]=document.getElementById('res').value.split(',').map(Number);
+  const fps=+document.getElementById('fps').value;
+  const hrs=+document.getElementById('hours').value;
+  const days=+document.getElementById('days').value;
+
+  const rawSingleMbps=w*h*fps*12/1e6;
+  const compSingleMbps=rawSingleMbps/80;
+  const videoMbps=compSingleMbps*2;
+  const hapticMbps=1;
+  const totalMbps=videoMbps+hapticMbps;
+
+  const gbPerHour=totalMbps*3600/8/1024;
+  const gbPerDay=gbPerHour*hrs;
+  const gbPerMonth=gbPerDay*days;
+  const gbPerYear=gbPerMonth*12;
+
+  document.getElementById('dataCards').innerHTML=`
+    <div class="r-card"><div class="rl">视频码率（双目）</div><div class="rv">${videoMbps.toFixed(1)} <span style="font-size:12px">Mbps</span></div></div>
+    <div class="r-card"><div class="rl">总码率（含触觉）</div><div class="rv">${totalMbps.toFixed(1)} <span style="font-size:12px">Mbps</span></div></div>
+    <div class="r-card"><div class="rl">每小时数据量</div><div class="rv">${gbPerHour.toFixed(1)} <span style="font-size:12px">GB</span></div></div>
+    <div class="r-card"><div class="rl">每天（${hrs}小时）</div><div class="rv highlight">${gbPerDay.toFixed(1)} <span style="font-size:12px">GB</span></div></div>
+    <div class="r-card"><div class="rl">每月（${days}天）</div><div class="rv highlight">${gbPerMonth.toFixed(0)} <span style="font-size:12px">GB</span></div></div>
+    <div class="r-card"><div class="rl">每年</div><div class="rv">${(gbPerYear/1024).toFixed(1)} <span style="font-size:12px">TB</span></div></div>
+  `;
+
+  document.getElementById('formulaBox').innerHTML=`
+视频: ${w}×${h} × ${fps}fps × 12bit = ${rawSingleMbps.toFixed(1)} Mbps/路 → ÷80 = ${compSingleMbps.toFixed(2)} Mbps/路 → ×2路 = ${videoMbps.toFixed(1)} Mbps
+触觉: 双臂 500Hz × 128B × 2方向 ≈ 1 Mbps
+总计: ${totalMbps.toFixed(1)} Mbps × ${hrs}h × 3600s ÷ 8 ÷ 1024 = ${gbPerDay.toFixed(1)} GB/天`;
+
+  // Scenarios
+  const bwNeededMbps=Math.ceil(totalMbps*1.3);
+  const cnCloudMonthly=bwNeededMbps<=5?68:bwNeededMbps<=10?298:bwNeededMbps<=20?600:1000;
+  const cnTrafficCost=gbPerMonth*0.8;
+  const homeIsp=98;
+  const intlCloudMonthly=cnCloudMonthly*3.5;
+
+  document.getElementById('scenarioBox').innerHTML=`
+    <div class="scene">
+      <h3><span class="dot" style="background:#3b6d11"></span> 场景一：校园网 / 同局域网</h3>
+      <div class="row"><span class="l">网络费用</span><span class="v green">¥0（已含在网费中）</span></div>
+      <div class="row"><span class="l">每天流量</span><span class="v">${gbPerDay.toFixed(1)} GB</span></div>
+      <div class="row"><span class="l">带宽要求</span><span class="v">${totalMbps.toFixed(1)} Mbps（100M网口绰绰有余）</span></div>
+      <div class="row"><span class="l">适用场景</span><span class="v">食堂↔宿舍同校园网</span></div>
+      <div class="row"><span class="l" style="font-weight:600">月度成本</span><span class="v green" style="font-size:16px">¥0</span></div>
+    </div>
+
+    <div class="scene">
+      <h3><span class="dot" style="background:#854f0b"></span> 场景二：国内跨城（如北京→深圳）</h3>
+      <div class="row"><span class="l">方案A: P2P直连 (Tailscale)</span><span class="v">两端各自家庭宽带费</span></div>
+      <div class="row"><span class="l">　家庭宽带 ×2</span><span class="v">~¥${homeIsp*2}/月（不限流量）</span></div>
+      <div class="row"><span class="l">方案B: 云服务器中转</span><span class="v">需${bwNeededMbps}Mbps固定带宽</span></div>
+      <div class="row"><span class="l">　云服务器月费</span><span class="v">~¥${cnCloudMonthly}/月</span></div>
+      <div class="row"><span class="l">方案C: 按流量计费</span><span class="v">${gbPerMonth.toFixed(0)}GB × ¥0.8/GB</span></div>
+      <div class="row"><span class="l">　月度流量费</span><span class="v orange">¥${cnTrafficCost.toFixed(0)}/月</span></div>
+      <div class="row"><span class="l" style="font-weight:600">推荐方案</span><span class="v">P2P直连（最便宜）或固定带宽（最稳定）</span></div>
+      <div class="row"><span class="l" style="font-weight:600">月度成本</span><span class="v orange" style="font-size:16px">¥${homeIsp*2} ~ ¥${cnCloudMonthly}</span></div>
+    </div>
+  `;
+
+  document.getElementById('intlBox').innerHTML=`
+    <div class="scene">
+      <h3><span class="dot" style="background:#a32d2d"></span> 场景三：跨国（中国→日本，~2000km）</h3>
+      <div class="row"><span class="l">网络延迟</span><span class="v">单程 ~30-50ms（海底光缆）</span></div>
+      <div class="row"><span class="l">云服务器（国际带宽）</span><span class="v">~¥${Math.round(intlCloudMonthly)}/月（${bwNeededMbps}M国际带宽）</span></div>
+      <div class="row"><span class="l">国际流量单价</span><span class="v">~¥1.5-3/GB（阿里云国际）</span></div>
+      <div class="row"><span class="l">按流量月费</span><span class="v red">¥${Math.round(gbPerMonth*2)}/月</span></div>
+      <div class="row"><span class="l">更优方案</span><span class="v">在日本端部署一台服务器做转发</span></div>
+      <div class="row"><span class="l">日本VPS（如AWS东京）</span><span class="v">~¥200-400/月（含流量）</span></div>
+      <div class="row"><span class="l">+ 中国端出口带宽</span><span class="v">~¥${cnCloudMonthly}/月</span></div>
+      <div class="row"><span class="l" style="font-weight:600">月度成本</span><span class="v red" style="font-size:16px">¥${cnCloudMonthly+300} ~ ¥${Math.round(intlCloudMonthly)}</span></div>
+    </div>
+    <div class="scene">
+      <h3><span class="dot" style="background:#534AB7"></span> 横向对比：一个遥操工人 vs 一个现场工人</h3>
+      <div class="row"><span class="l">遥操通信成本（国内跨城）</span><span class="v">~¥${homeIsp*2}-${cnCloudMonthly}/月</span></div>
+      <div class="row"><span class="l">遥操通信成本（跨国）</span><span class="v">~¥${cnCloudMonthly+300}-${Math.round(intlCloudMonthly)}/月</span></div>
+      <div class="row"><span class="l">现场工人差旅+住宿（国内）</span><span class="v">~¥3000-5000/月</span></div>
+      <div class="row"><span class="l">现场工人差旅+住宿（国外）</span><span class="v">~¥8000-15000/月</span></div>
+      <div class="row"><span class="l" style="font-weight:600">结论</span><span class="v green">通信费远低于差旅费，且随时间只会更便宜</span></div>
+    </div>
+  `;
+
+  // Trend
+  const trendData=[
+    {yr:'2020',price:1.2,color:'#a32d2d'},
+    {yr:'2022',price:0.9,color:'#854f0b'},
+    {yr:'2024',price:0.65,color:'#854f0b'},
+    {yr:'2025',price:0.5,color:'#639922'},
+    {yr:'2027',price:0.3,color:'#3b6d11'},
+    {yr:'2030',price:0.15,color:'#3b6d11'},
+  ];
+  const maxP=1.5;
+  let th='';
+  trendData.forEach(d=>{
+    const pct=d.price/maxP*100;
+    const dayCost=(gbPerDay*d.price).toFixed(1);
+    th+=`<div class="trend-row">
+      <div class="yr">${d.yr}</div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${d.color}"></div></div>
+      <div class="price" style="color:${d.color}">¥${d.price}/GB → ¥${dayCost}/天</div>
+    </div>`;
+  });
+  document.getElementById('trendBox').innerHTML=th;
+}
+calc();
+</script>
+</body></html>
